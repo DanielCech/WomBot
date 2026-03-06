@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:learn.adafruit.com)",
+      "WebFetch(domain:tech.microbit.org)",
+      "WebFetch(domain:emakefun-docs.readthedocs.io)",
+      "WebFetch(domain:learn.sparkfun.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docu-magicbit.readthedocs.io)"
+    ]
+  }
+}

@@ -1,132 +1,240 @@
 # WomBot - TODO / Implementation Plan
 
-## Project Overview
+## Vize projektu
 
-WomBot is a small walking robot (wombat-inspired) controlled by **Adafruit CLUE** (nRF52840)
-mounted on a **MagicBit V2.0** expansion board (PCA9685-based servo/motor driver).
-
-### Hardware Components
-- **Brain**: Adafruit CLUE (nRF52840, micro:bit edge connector compatible)
-- **Expansion board**: Emakefun MagicBit V2.0 (PCA9685 @ I2C address 0x40, 8 servo ports S1-S8)
-- **Servos**: One per leg + one for head movement
-- **Distance sensor**: ElecFreaks Sonar:bit (3-wire, HC-SR04 protocol, single signal pin, 3-5V)
-- **Onboard sensors**: Accelerometer, gyroscope, proximity, temperature, humidity, barometric pressure
-
-### Key Technical Details
-- MagicBit connects via edge connector; PCA9685 communicates over I2C (SCL=P19, SDA=P20)
-- PCA9685 frequency for servos: 50 Hz
-- Servo pulse: 600-2400us maps to 0-180 degrees
-- Sonar:bit protocol: 10us trigger pulse on signal pin, then pulseIn to read echo (distance = pulse_us / 58 cm)
-- Adafruit CLUE I2C also available via STEMMA QT connector
-
-### Platform Decision: **Arduino IDE (C/C++)**
-- Adafruit provides full Arduino BSP for CLUE (nRF52840)
-- Excellent library support: `Adafruit_PWMServoDriver` for PCA9685, `Adafruit_CLUE` for onboard sensors
-- Better performance for real-time servo control vs. CircuitPython
-- PlatformIO also supported (board: `adafruit_clue_nrf52840`)
+WomBot je Lego robot ovládaný **Adafruit CLUE** (nRF52840) na expanzní desce **Magic:bit V2.0**.
+Cíl: interaktivní robot, který chodí, reaguje na prostředí, řeší bludiště a komunikuje
+s počítačem přes Bluetooth. Plně využít HW možnosti obou desek.
 
 ---
 
-## Phase 1: Project Setup
+## Hardware Overview
 
-- [ ] Create Arduino project structure (`WomBot.ino` + headers)
-- [ ] Configure for Adafruit CLUE board (nRF52840)
-- [ ] Add required library dependencies:
-  - `Adafruit_PWMServoDriver` (PCA9685 control)
-  - `Adafruit_GFX` + `Adafruit_ST7789` (TFT display)
-  - `Adafruit_Sensor` (unified sensor framework)
-  - `Adafruit_LSM6DS` (accelerometer/gyro)
-  - `Adafruit_LIS3MDL` (magnetometer)
-  - `Adafruit_APDS9960` (proximity/gesture/color)
-  - `Adafruit_BMP280` (pressure/temperature)
-  - `Adafruit_SHT31` (humidity)
-  - `Wire` (I2C)
-  - `Adafruit_TinyUSB` (required for nRF52840 Serial)
+### Adafruit CLUE (mozek)
 
-## Phase 2: Hardware Abstraction Layer
+| Vlastnost | Detail |
+|-----------|--------|
+| Procesor | Nordic nRF52840 — 64 MHz Cortex M4, 1 MB Flash, 256 KB RAM |
+| Displej | 1.3" 240x240 Color IPS TFT (ST7789) |
+| Bluetooth | BLE 5.0 (nRF52840) |
+| Flash | 2 MB interní (datalogging, obrázky, fonty) |
+| Senzory | LSM6DS3TR (akcel/gyro), LIS3MDL (magnetometr), APDS9960 (proximity/light/color/gesture), PDM mikrofon, SHT30 (vlhkost), BMP280 (teplota/tlak/výška) |
+| LED | 1x RGB NeoPixel, 2x bílé přední LED |
+| Zvuk | Buzzer/speaker |
+| Tlačítka | A (pin 5), B (pin 11), Reset |
+| Expanze | STEMMA QT / Qwiic (I2C), edge connector (micro:bit kompatibilní) |
 
-- [ ] **MagicBitDriver** - PCA9685 servo control class
-  - Initialize I2C communication with PCA9685 (address 0x40)
-  - Set PWM frequency to 50 Hz
-  - `setServo(channel, degrees)` - map 0-180 degrees to PWM pulse width
-  - `setAllServosOff()` - safety stop
+### Magic:bit V2.0 (tělo)
 
-- [ ] **SonarBit** - Ultrasonic distance sensor class
-  - Configure signal pin (digital I/O)
-  - `getDistanceCm()` - trigger pulse + measure echo, return distance in cm
-  - Timeout handling (max ~400cm / 25ms)
+| Funkce | Detail | Piny/Kanály |
+|--------|--------|-------------|
+| 8x servo (S1-S8) | PCA9685 kanály 8-15 | Sx → ch (x+7) |
+| 4x DC motor (M1-M4) | PCA9685 kanály 0-7, H-bridge | 2 ch/motor |
+| 2x krokový motor | 28BYJ-48 kompatibilní, sdílí ch s motory | Stepper1=ch4-7, Stepper2=ch0-3 |
+| 4x RGB LED | NeoPixel WS2812B | Pin P16 |
+| Buzzer | Pasivní, jumper propojka | Pin P0 |
+| IR přijímač | NEC protokol | Na desce |
+| RGB ultrazvuk | Trig+echo single-pin, 6 vestavěných RGB LED | Konektor nahoře |
+| I2C | PCA9685 @ 0x40 | P19 (SCL), P20 (SDA) |
+| Napájení | 18650 Li-Ion + micro USB nabíjení + ext. 3-5V vstup + 5V výstup | |
+| Montáž | Lego-kompatibilní otvory | |
 
-- [ ] **ClueDisplay** - TFT display wrapper
-  - Show robot status, sensor readings, current mode
-  - Simple text-based UI
+### Externě připojeno
 
-## Phase 3: Robot Kinematics
-
-- [ ] **WomBotLegs** - Walking gait controller
-  - Define servo-to-leg mapping (which PCA9685 channel = which leg)
-  - Define neutral/center positions for each servo
-  - Implement basic gaits:
-    - `standNeutral()` - all legs at rest position
-    - `walkForward()` - coordinated leg movement pattern
-    - `walkBackward()`
-    - `turnLeft()` / `turnRight()`
-    - `stop()` - return to neutral
-
-- [ ] **WomBotHead** - Head servo controller
-  - Define head servo channel
-  - `lookCenter()`, `lookLeft()`, `lookRight()`
-  - `scan()` - sweep head to find obstacles
-
-## Phase 4: Autonomous Behavior
-
-- [ ] **ObstacleAvoidance** - Basic autonomous navigation
-  - Use Sonar:bit for forward distance measurement
-  - Head scanning for left/right obstacle detection
-  - Decision logic: if obstacle < threshold, stop, scan, turn to clearest direction
-  - Walk forward when path is clear
-
-- [ ] **SensorIntegration** - Use CLUE onboard sensors
-  - Accelerometer for tilt detection (fall prevention)
-  - Proximity sensor for close-range detection
-  - Button A/B for mode switching
-
-## Phase 5: User Interface
-
-- [ ] **Mode System**
-  - Button A: cycle through modes (Manual, Autonomous, Demo, Sensor Display)
-  - Button B: action within mode (start/stop, trigger action)
-  - Display current mode and status on TFT
-
-- [ ] **Demo Mode**
-  - Pre-programmed sequence: walk, scan, react to obstacles
-  - Show distance readings on display
-
-## Phase 6: Polish & Extras
-
-- [ ] Servo calibration utility (adjust center positions per servo)
-- [ ] BLE remote control (optional, CLUE has BLE built-in)
-- [ ] Sound effects via buzzer (if connected to MagicBit P0)
-- [ ] NeoPixel status indicators (MagicBit has 4 RGB LEDs on P16)
+| Zařízení | Připojení |
+|----------|-----------|
+| Sonar:bit (ElecFreaks) | Pin P2, HC-SR04 single-pin, 4-400 cm |
 
 ---
 
-## Servo Channel Assignment (to be confirmed with physical robot)
+## Aktuální zapojení serv
 
-| Channel | Function        | Neutral Angle |
-|---------|----------------|---------------|
-| S1 (0)  | Front Left Leg  | 90           |
-| S2 (1)  | Front Right Leg | 90           |
-| S3 (2)  | Back Left Leg   | 90           |
-| S4 (3)  | Back Right Leg  | 90           |
-| S5 (4)  | Head            | 90           |
+| Konektor | PCA9685 ch | Funkce | Kód (index/konstanta) |
+|----------|------------|--------|----------------------|
+| S1 | 8 | Pravá zadní noha | LEG_CHANNELS[3] = 8 |
+| S2 | 9 | Hlava | HEAD_CHANNEL = 9 |
+| S3 | 10 | Levá zadní noha | LEG_CHANNELS[2] = 10 |
+| S4 | 11 | Pravá přední noha | LEG_CHANNELS[1] = 11 |
+| S5 | 12 | Levá přední noha | LEG_CHANNELS[0] = 12 |
 
-> Note: Channel assignments and neutral angles need to be calibrated
-> with the physical robot. The mapping above is a starting point.
+LEG_CHANNELS index: [0]=FL, [1]=FR, [2]=BL, [3]=BR
+
+---
+
+## Platforma: Arduino IDE (C/C++)
+
+- Adafruit nRF52 Arduino BSP
+- PlatformIO: board `adafruit_clue_nrf52840`
+
+### Aktuální knihovny
+- `Wire` (I2C)
+- `Adafruit_TinyUSB` (nRF52840 Serial)
+- `Adafruit_GFX` + `Adafruit_ST7789` (TFT)
+
+### Potřebné knihovny (pro rozšíření)
+- `Adafruit_NeoPixel` (RGB LED)
+- `Adafruit_LSM6DS` (akcel/gyro)
+- `Adafruit_LIS3MDL` (magnetometr)
+- `Adafruit_APDS9960` (proximity/gesture/color)
+- `Adafruit_BMP280` (tlak/teplota)
+- `Adafruit_SHT31` (vlhkost)
+- `IRremote` nebo vlastní NEC dekodér (IR)
+- `Bluefruit` / `Adafruit_nRF52_BLE` (BLE)
+
+---
+
+## Fáze implementace
+
+### Phase 1: Základní kostra (HOTOVO)
+
+- [x] Arduino projekt (`WomBotArduino.ino` + moduly)
+- [x] MagicBitDriver — PCA9685 I2C driver (adresa 0x40, AI bit, 50 Hz)
+- [x] SonarBit — ultrazvukový senzor vzdálenosti
+- [x] ClueDisplay — TFT displej wrapper
+- [x] WomBotLegs — 4 nohy, trot gait, turn
+- [x] WomBotHead — servo hlavy, scan
+- [x] Mode system (Idle, Autonomous, Demo, Sensors) + tlačítka A/B
+- [x] Oprava PCA9685 kanálů: servo S1-S8 = ch 8-15 (ne 0-7!)
+- [x] Oprava Auto-Increment bit v MODE1 registru
+
+### Phase 2: Ověření a kalibrace serv
+
+- [ ] Ověřit, že serva reagují po opravě kanálů
+- [ ] Kalibrace neutrálních úhlů pro každé servo
+- [ ] Kalibrace směru otáčení (některá serva mohou být zrcadlově)
+- [ ] Servo test mode — postupné testování jednotlivých kanálů
+- [ ] Doladit STRIDE_ANGLE a TURN_ANGLE pro reálnou chůzi
+
+### Phase 3: RGB LED + Buzzer + Emoce
+
+- [ ] **RGBController** — ovládání 4x NeoPixel na P16
+  - Stavové barvy: idle (modrá), walking (zelená), obstacle (červená), demo (duhová)
+  - Dýchací efekt, blikání, rotace
+- [ ] **BuzzerController** — pasivní buzzer na P0
+  - Zvuky: startup melodie, obstacle warning, happy beep, sad tone
+  - Jednoduchý tone player
+- [ ] **Emotions** — kombinace displej + LED + buzzer
+  - Obličeje/emotikony na TFT displeji
+  - Synchronizace s LED efekty a zvuky
+  - Reakce na události: překážka, dotyk (proximity), zvuk (mikrofon)
+
+### Phase 4: Senzory CLUE
+
+- [ ] **AccelGyro** — LSM6DS3TR
+  - Detekce náklonu (prevence pádu)
+  - Detekce nárazu / zvednutí
+  - Kompenzace chůze
+- [ ] **Magnetometer** — LIS3MDL
+  - Kompas — orientace v prostoru
+  - Užitečné pro navigaci v bludišti
+- [ ] **ProximityLight** — APDS9960
+  - Blízká detekce překážek (doplňuje sonar)
+  - Detekce barev podlahy (sledování čáry?)
+  - Gesta — interakce s uživatelem
+- [ ] **Microphone** — PDM
+  - Detekce zvuku / tlesknutí → reakce
+  - Jednoduchý level meter na displeji
+- [ ] **Environment** — BMP280 + SHT30
+  - Teplota, vlhkost, tlak na displeji
+  - Datalogging do interní flash
+
+### Phase 5: Bluetooth (BLE)
+
+- [ ] **BLE Remote Control**
+  - UART service pro příkazy z počítače/mobilu
+  - Ovládání pohybu: forward, backward, left, right, stop
+  - Nastavení režimů, kalibrace
+- [ ] **BLE Telemetrie**
+  - Streamování dat ze senzorů do počítače
+  - Vzdálenosti, orientace, teplota
+  - Real-time monitoring
+- [ ] **PC companion app** (Python/web)
+  - BLE připojení přes `bleak` (Python) nebo Web Bluetooth
+  - Vizualizace dat, mapování prostředí
+  - Možnost posílat složitější příkazy
+
+### Phase 6: Inteligentní chování
+
+- [ ] **Maze Solver**
+  - Wall-following algoritmus (pravá/levá ruka)
+  - Sonar + head scan pro detekci stěn
+  - Kompas pro orientaci
+  - Mapování na displeji
+- [ ] **Obstacle Course**
+  - Inteligentní navigace kolem překážek
+  - Kombinace sonar + proximity + akcel pro stabilitu
+- [ ] **Follow Mode**
+  - Sledování objektu před robotem (sonar)
+  - Udržování konstantní vzdálenosti
+- [ ] **Dance Mode**
+  - Předprogramované taneční sekvence
+  - Synchronizace s hudbou / blikáním LED
+  - Reakce na zvuk z mikrofonu
+
+### Phase 7: IR ovládání
+
+- [ ] **IRReceiver** — NEC dekodér
+  - Emakefun dálkový ovladač: A,B,C,D, UP,DOWN,LEFT,RIGHT, OK, 0-9, +/-
+  - Ovládání pohybu přes IR
+  - Přepínání režimů
+  - Přímé ovládání serv pro kalibraci
+
+### Phase 8: Rozšíření motorů
+
+- [ ] **DC motory** — až 4x (M1-M4)
+  - Pohon kol (pokud se přidají k Lego konstrukci)
+  - Jiné mechanismy (zvedání, uchopování)
+- [ ] **Krokové motory** — 28BYJ-48
+  - 2x stepper interface na Magic:bitu (5-pin konektory)
+  - Přesné polohování
+  - Pozor: sdílí PCA9685 kanály s DC motory (nelze kombinovat)
+
+---
+
+## Nápady na interakce
+
+- **Pozdrav**: Když se přiblíží člověk (proximity), zamává hlavou, zabliká LED, zahraje melodii
+- **Strach**: Při blízké překážce couvne, zčervená LED, žalostný tón
+- **Zvědavost**: Otáčí hlavou za zvukem (mikrofon), zeleně bliká
+- **Taneček**: Na zvuk hudby se začne pohybovat v rytmu
+- **Průzkumník**: Systematicky mapuje místnost, zobrazuje mapu na displeji
+- **Hra**: Bludiště z Lega — najde cestu ven
+- **Počasí**: Zobrazuje teplotu/vlhkost s emocemi (sluníčko/mráček na TFT)
+- **Dálkové ovládání**: IR ovladač nebo BLE z telefonu/PC
+
+---
+
+## Klíčové technické poznámky
+
+### PCA9685 kanály (OVĚŘENO)
+
+```
+Kanály  0-7:  DC motory (M1-M4, H-bridge, 2 kanály/motor)
+Kanály 8-15:  Serva (S1=ch8, S2=ch9, ..., S8=ch15)
+Formule:      Sx → PCA9685 kanál (x + 7)
+```
+
+Zdroj: oficiální TypeScript kód `emakefun/pxt-magicbit`: `setPwm(index + 7, 0, value)`
+
+**Pozor**: Python knihovna `magicbit/Magicbit.py` má chybu — chybí offset +7!
+
+### I2C
+
+- PCA9685 @ 0x40 přes edge connector (P19=SCL, P20=SDA)
+- Arduino `Wire.begin()` automaticky použije správné piny
+- CLUE onboard senzory sdílí stejný I2C bus (ale na jiných adresách)
+
+### Napájení serv
+
+- Serva potřebují dostatek proudu — 18650 baterie nebo ext. 5V napájení
+- Při slabé baterii serva nemusí reagovat i když komunikace funguje
+
+---
 
 ## Sonar:bit Connection
 
-| Wire    | Connection      |
-|---------|----------------|
-| G       | GND            |
-| V       | 3.3V           |
-| S       | P1 or P2 (configurable) |
+| Wire | Connection |
+|------|-----------|
+| G | GND |
+| V | 3.3V |
+| S | P2 (pin 2) |

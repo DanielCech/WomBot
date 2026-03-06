@@ -3,7 +3,8 @@
  *
  * The MagicBit V2.0 expansion board uses a PCA9685 PWM controller
  * at I2C address 0x40 to drive 8 servo outputs (S1-S8) and 4 DC motors.
- * Servo channels map to PCA9685 channels 0-7 (S1=ch0 ... S8=ch7).
+ * Servo channels map to PCA9685 channels 8-15 (S1=ch8 ... S8=ch15).
+ * Motor channels are 0-7 (M1-M4, two channels each).
  */
 
 #ifndef MAGICBIT_DRIVER_H
@@ -14,7 +15,7 @@
 class MagicBitDriver {
 public:
   static const uint8_t PCA9685_ADDR = 0x40;
-  static const uint8_t NUM_SERVO_CHANNELS = 8;
+  static const uint8_t NUM_SERVO_CHANNELS = 16;
 
   // Servo pulse range in microseconds
   static const uint16_t SERVO_MIN_US = 600;

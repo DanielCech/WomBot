@@ -12,7 +12,7 @@
 
 class WomBotHead {
 public:
-  static const uint8_t HEAD_CHANNEL = 4;  // MagicBit S5 = PCA9685 channel 4
+  static const uint8_t HEAD_CHANNEL = 9;  // MagicBit S2 = PCA9685 channel 9 (hlava)
 
   static const float CENTER_ANGLE;
   static const float LEFT_ANGLE;

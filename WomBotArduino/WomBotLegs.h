@@ -2,7 +2,7 @@
  * WomBotLegs.h - Walking gait controller
  *
  * Controls leg servos via MagicBitDriver to produce walking gaits.
- * Default assumes 4 legs, one servo per leg, on MagicBit channels S1-S4.
+ * 4 legs, one servo per leg, on MagicBit channels S1,S3-S5 (PCA9685 ch 8,10-12).
  *
  * IMPORTANT: Servo channel assignments and neutral angles must be
  * calibrated for the physical robot! Adjust the constants below.
@@ -15,7 +15,7 @@
 
 class WomBotLegs {
 public:
-  // Servo channel assignments (MagicBit S1-S4 = PCA9685 channels 0-3)
+  // Servo channel assignments (MagicBit Sx = PCA9685 channel x+7)
   static const uint8_t NUM_LEGS = 4;
   static const uint8_t LEG_CHANNELS[NUM_LEGS];
 

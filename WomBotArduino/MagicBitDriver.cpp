@@ -20,8 +20,8 @@ bool MagicBitDriver::begin() {
   writeReg(PCA9685_MODE1, 0x00);
   writeReg(PCA9685_MODE2, 0x04);
 
-  // Set auto-increment
-  writeReg(PCA9685_MODE1, 0x01);
+  // Set auto-increment (AI = bit 5)
+  writeReg(PCA9685_MODE1, 0x20);
   delay(5);
 
   uint8_t mode1 = readReg(PCA9685_MODE1);

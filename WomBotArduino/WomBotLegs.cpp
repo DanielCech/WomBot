@@ -7,17 +7,18 @@
  *
  * This creates a diagonal walking pattern (trot gait).
  *
- * Servo channels (ADJUST THESE for your robot):
- *   S1 (ch 0) = Front Left
- *   S2 (ch 1) = Front Right
- *   S3 (ch 2) = Back Left
- *   S4 (ch 3) = Back Right
+ * Servo channels (Magic:bit Sx = PCA9685 channel x+7):
+ *   S5 (ch 12) = Front Left  (levá přední)
+ *   S4 (ch 11) = Front Right (pravá přední)
+ *   S3 (ch 10) = Back Left   (levá zadní)
+ *   S1 (ch 8)  = Back Right  (pravá zadní)
+ *   S2 (ch 9)  = Head        (hlava) -- see WomBotHead.h
  */
 
 #include <Arduino.h>
 #include "WomBotLegs.h"
 
-const uint8_t WomBotLegs::LEG_CHANNELS[NUM_LEGS] = {0, 1, 2, 3};
+const uint8_t WomBotLegs::LEG_CHANNELS[NUM_LEGS] = {12, 11, 10, 8};
 
 const float WomBotLegs::NEUTRAL_ANGLE = 90.0f;
 const float WomBotLegs::STRIDE_ANGLE = 25.0f;
