@@ -19,6 +19,8 @@
 #include "WomBotLegs.h"
 
 const uint8_t WomBotLegs::LEG_CHANNELS[NUM_LEGS] = {12, 11, 10, 8};
+//                                                  FL   FR   BL   BR
+const bool WomBotLegs::LEG_REVERSED[NUM_LEGS] = {true, false, true, false};
 
 const float WomBotLegs::NEUTRAL_ANGLE = 90.0f;
 const float WomBotLegs::STRIDE_ANGLE = 25.0f;
@@ -31,7 +33,9 @@ WomBotLegs::WomBotLegs(MagicBitDriver& driver)
 
 void WomBotLegs::setLeg(uint8_t leg, float degrees) {
   if (leg >= NUM_LEGS) return;
-  _driver.setServo(LEG_CHANNELS[leg], degrees + _offsets[leg]);
+  float angle = degrees + _offsets[leg];
+  if (LEG_REVERSED[leg]) angle = 180.0f - angle;
+  _driver.setServo(LEG_CHANNELS[leg], angle);
 }
 
 void WomBotLegs::setLegOffset(uint8_t leg, float offset) {

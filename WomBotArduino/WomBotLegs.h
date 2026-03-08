@@ -18,6 +18,7 @@ public:
   // Servo channel assignments (MagicBit Sx = PCA9685 channel x+7)
   static const uint8_t NUM_LEGS = 4;
   static const uint8_t LEG_CHANNELS[NUM_LEGS];
+  static const bool LEG_REVERSED[NUM_LEGS];  // true = left side (servo mounted mirrored)
 
   // Gait parameters (degrees)
   static const float NEUTRAL_ANGLE;    // Center position
